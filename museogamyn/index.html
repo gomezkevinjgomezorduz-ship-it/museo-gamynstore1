@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GAMYN">
+<meta name="theme-color" content="#050505">
+<link rel="manifest" href="manifest.json">
+
+  <link rel="stylesheet" href="style.css">
+
+  <!-- A-Frame (motor 3D). Si quieres trabajar sin internet, descarga este archivo
+       a la carpeta assets/ y cambia la ruta por: assets/aframe.min.js -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+  <!-- Nuestros componentes (piso, estantes, catálogo, movimiento...). Debe ir ANTES de <a-scene>. -->
+  <script src="script.js"></script>
+</head>
+
+<body>
+
+  <!-- ===================== PANTALLA DE BIENVENIDA ===================== -->
+  <div id="welcome">
+    <div class="welcome-inner">
+      <p class="eyebrow">MODERN STREETWEAR</p>
+      <h1><img src="logogamyn.png" alt="GAMYN"></h1>
+      <p class="subtitle">Virtual Museum</p>
+      <button id="enter" disabled>Cargando…</button>
+      <p class="hint">Toca la pantalla para comenzar · Explora la colección</p>
+      <ul class="howto">
+        <li class="only-touch">Arrastra el dedo para mirar · Joystick para caminar</li>
+        <li class="only-desktop">W A S D / flechas para caminar · Arrastra el mouse para mirar</li>
+        <li>Toca una prenda para ver su ficha</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===================== INTERFAZ DENTRO DEL MUSEO ===================== -->
+  <div id="hud" hidden>
+    <div id="brand">GAMYN <span>Virtual Museum</span></div>
+    <button id="nearby" hidden></button>
+
+    <div id="joystick" aria-label="Joystick para caminar"><div id="joystick-knob"></div></div>
+    <div id="turn-buttons">
+      <button data-turn="1" aria-label="Girar a la izquierda">⟲</button>
+      <button data-turn="-1" aria-label="Girar a la derecha">⟳</button>
+    </div>
+  </div>
+
+  <!-- ===================== FICHA DE PRENDA ===================== -->
+  <aside id="info-panel" hidden>
+    <button id="info-close" aria-label="Cerrar">×</button>
+    <p id="info-collection"></p>
+    <h2 id="info-name"></h2>
+    <p id="info-desc"></p>
+    <dl>
+      <dt>Material</dt><dd id="info-material"></dd>
+      <dt>Concepto</dt><dd id="info-concept"></dd>
+      <dt>Precio</dt><dd id="info-price"></dd>
+    </dl>
+  </aside>
+
+  <!-- ===================== ESCENA 3D ===================== -->
+  <a-scene id="scene"
+           renderer="antialias: true; powerPreference: high-performance"
+           vr-mode-ui="enabled: true"
+           device-orientation-permission-ui="enabled: true"
+           loading-screen="enabled: false"
+                   background="color: #050505"
+        gltf-model="dracoDecoderPath: https://www.gstatic.com/draco/versioned/decoders/1.5.6/">
+
+    <!-- ---------- ILUMINACIÓN GENERAL ---------- -->
+    <!-- Luz ambiental: evita que el museo quede completamente oscuro -->
+    <a-entity light="type: ambient; color: #9aa0b5; intensity: 0.0"></a-entity>
+    <!-- Luz hemisférica: un poco más clara arriba que abajo -->
+    <a-entity light="type: hemisphere; color: #ffffff; groundColor: #1a1a1a; intensity: 0.5"></a-entity>
+    <!-- Luz puntual principal (entrada / sala principal). -->
+    <a-entity light="type: point; color: #ffffff; intensity: 0.9; distance: 20; decay: 2" position="0 4.4 8"></a-entity>
+
+    <!-- Las siguientes luces SOLO se usan en computador (data-desktop-only) para cuidar el celular -->
+    <a-entity data-desktop-only light="type: directional; color: #cfd8ff; intensity: 0.6" position="-4 8 6"></a-entity>
+    <a-entity data-desktop-only light="type: point; color: #ffffff; intensity: 30; distance: 20; decay: 2" position="0 4.4 -10"></a-entity>
+    <a-entity data-desktop-only light="type: point; color: #cfe0ff; intensity: 20; distance: 14; decay: 2" position="0 4.4 0"></a-entity>
+    <!-- Luz de acento azul/violeta en el fondo: toque futurista -->
+    <a-entity data-desktop-only light="type: point; color: #4a5cff; intensity: 8; distance: 9; decay: 2" position="0 1.2 -14.5"></a-entity>
+
+    <!-- ---------- ESTRUCTURA DEL ESPACIO (24 m de ancho × 32 m de largo × 5 m de alto) ---------- -->
+    <!-- Piso de ajedrez blanco y negro (componente checker-floor, en script.js) -->
+    <a-entity checker-floor="width: 24; depth: 32; tile: 1"></a-entity>
+
+    <!-- Techo -->
+    <a-plane position="0 5 0" rotation="90 0 0" width="24" height="32" material="color: #0a0a0b; roughness: 0.9; side: double"></a-plane>
+    <!-- Paredes: izquierda, derecha, fondo, entrada -->
+    <a-plane position="-12 2.5 0" rotation="0 90 0"  width="32" height="5" material="color: #17171a; roughness: 0.8; side: double"></a-plane>
+    <a-plane position="12 2.5 0"  rotation="0 -90 0" width="32" height="5" material="color: #17171a; roughness: 0.8; side: double"></a-plane>
+    <a-plane position="0 2.5 -16" rotation="0 0 0"   width="24" height="5" material="color: #121214; roughness: 0.8; side: double"></a-plane>
+    <a-plane position="0 2.5 16"  rotation="0 180 0" width="24" height="5" material="color: #121214; roughness: 0.8; side: double"></a-plane>
+
+    <!-- Zócalos luminosos (línea blanca fina al pie de las paredes) -->
+    <a-box position="-11.98 0.04 0" width="0.03" height="0.04" depth="32" material="shader: flat; color: #ffffff"></a-box>
+    <a-box position="11.98 0.04 0"  width="0.03" height="0.04" depth="32" material="shader: flat; color: #ffffff"></a-box>
+
+    <!-- Barras de luz en el techo (decorativas, no gastan rendimiento) -->
+    <a-box position="0 4.95 12"  width="10" height="0.04" depth="0.14" material="shader: flat; color: #ffffff"></a-box>
+    <a-box position="0 4.95 4"   width="10" height="0.04" depth="0.14" material="shader: flat; color: #ffffff"></a-box>
+    <a-box position="0 4.95 -4"  width="10" height="0.04" depth="0.14" material="shader: flat; color: #ffffff"></a-box>
+    <a-box position="0 4.95 -12" width="10" height="0.04" depth="0.14" material="shader: flat; color: #ffffff"></a-box>
+
+    <!-- ---------- LETREROS Y ZONAS ---------- -->
+    <!-- Logo gigante en la pared del fondo -->
+   <a-image src="logogamyn.png" width="6" height="1.5" position="0 3.2 -15.9" material="shader: flat; transparent: true"></a-image>
+    <a-text value="MODERN STREETWEAR VIRTUAL MUSEUM" align="center" color="#bdbdbd" width="6" position="0 2.4 -15.9"></a-text>
+    <a-box position="0 2.05 -15.92" width="4" height="0.02" depth="0.01" material="shader: flat; color: #ffffff"></a-box>
+    <!-- Texto en la pared de la entrada (se ve al darse la vuelta) -->
+    <a-text value="GRACIAS POR VISITAR GAMYN" align="center" color="#ffffff" width="9" position="0 2.6 15.9" rotation="0 180 0"></a-text>
+
+    <!-- Carteles colgantes que marcan cada zona -->
+    <a-entity gamyn-sign="text: BIENVENIDO · ENTRADA; width: 5" position="0 3.9 11"></a-entity>
+    <a-entity gamyn-sign="text: COLLECTION 01; width: 4" position="0 3.9 8.5"></a-entity>
+    <a-entity gamyn-sign="text: SALA MANIFIESTO; width: 4.6" position="0 3.9 -8.5"></a-entity>
+
+    <!-- Pósters en la pared del fondo (para fotografías/carteles después: usa src: texturas/foto.jpg) -->
+    <a-entity gamyn-poster="src: texturas/imagen2gamyn.png; w: 1.8; h: 2.4" position="-8 2.3 -15.9"></a-entity>
+    <a-entity gamyn-poster="src: texturas/imagen1gamyn.png; w: 1.8; h: 2.4" position="8 2.3 -15.9"></a-entity>
+
+    <!-- ---------- ESTANTES (cada uno tiene 3 espacios o "slots") ---------- -->
+    <!-- Pared izquierda -->
+    <a-entity id="estante-izq-1" gamyn-shelf="slots: 3; spacing: 2; spotIntensity: 5" position="-11.7 0 5" rotation="0 90 0"></a-entity>
+    <a-entity id="estante-izq-2" gamyn-shelf="slots: 3; spacing: 2; spotIntensity: 5" position="-11.7 0 -3" rotation="0 90 0"></a-entity>
+    <!-- Pared derecha -->
+    <a-entity id="estante-der-1" gamyn-shelf="slots: 3; spacing: 2; spotIntensity: 5" position="11.7 0 5"  rotation="0 -90 0"></a-entity>
+    <a-entity id="estante-der-2" gamyn-shelf="slots: 3; spacing: 2; spotIntensity: 5" position="11.7 0 -3" rotation="0 -90 0"></a-entity>
+
+    <!-- ---------- PEDESTALES ---------- -->
+    <!-- Punto principal de exposición (centro del museo) -->
+    <a-entity id="ped-centro" gamyn-pedestal="height: 1.1; radius: 0.75; platform: 2.3; priority: true; spotIntensity: 16" position="0 0 0"></a-entity>
+    <!-- Sala Manifiesto: accesorios, gorras, zapatos -->
+    <a-entity id="ped-1" gamyn-pedestal="height: 1; radius: 0.5" position="-4 0 -12"></a-entity>
+    <a-entity id="ped-2" gamyn-pedestal="height: 1; radius: 0.5" position="0 0 -12"></a-entity>
+    <a-entity id="ped-3" gamyn-pedestal="height: 1; radius: 0.5" position="4 0 -12"></a-entity>
+    
+    <a-entity id="zona-moto" position="0 0 -6"></a-entity>
+    <a-entity light="type: point; color: #ffffff; intensity: 15; distance: 9; decay: 2" position="0 3.5 -5"></a-entity>
+    <!-- ---------- CATÁLOGO: aquí se crean todos los productos (ver script.js → PRODUCTS) ---------- -->
+    <a-entity id="catalog" gamyn-catalog></a-entity>
+
+    <!-- ---------- JUGADOR ---------- -->
+    <a-entity id="rig" gamyn-move="speed: 3.2" position="0 0 13">
+      <a-entity id="camera"
+                camera="fov: 75; near: 0.05; far: 60"
+                position="0 1.6 0"
+                look-controls="touchEnabled: true; magicWindowTrackingEnabled: true"                cursor="rayOrigin: mouse; fuse: false"
+                raycaster="objects: .clickable; far: 10"></a-entity>
+
+      <!-- Controles de realidad virtual (solo aparecen si usas un visor compatible con WebXR) -->
+      <a-entity id="hand-left"  laser-controls="hand: left"  raycaster="objects: .clickable; far: 10"></a-entity>
+      <a-entity id="hand-right" laser-controls="hand: right" raycaster="objects: .clickable; far: 10"></a-entity>
+    </a-entity>
+
+  </a-scene>
+</body>
+</html>
